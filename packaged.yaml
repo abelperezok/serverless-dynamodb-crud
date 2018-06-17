@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Sample SAM Template for dynamodb-crud
+
+  '
+Globals:
+  Function:
+    Environment:
+      Variables:
+        TABLE_NAME:
+          Ref: EntitiesTable
+    Runtime: dotnetcore2.0
+    Timeout: 60
+Outputs:
+  EntitiesApiUrl:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/entities
+  EntitiesTableName:
+    Description: DynamoDb table for Entities
+    Value:
+      Ref: EntitiesTable
+Resources:
+  DeleteEntity:
+    Properties:
+      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      Events:
+        Delete:
+          Properties:
+            Method: DELETE
+            Path: /entities/{id}
+          Type: Api
+      Handler: HelloWorld::HelloWorld.Function::DeleteFunctionHandlerAsync
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: EntitiesTable
+    Type: AWS::Serverless::Function
+  EntitiesTable:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: Id
+        AttributeType: N
+      KeySchema:
+      - AttributeName: Id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '5'
+        WriteCapacityUnits: '5'
+    Type: AWS::DynamoDB::Table
+  GetEntity:
+    Properties:
+      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      Events:
+        GetList:
+          Properties:
+            Method: GET
+            Path: /entities
+          Type: Api
+      Handler: HelloWorld::HelloWorld.Function::GetFunctionHandlerAsync
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: EntitiesTable
+    Type: AWS::Serverless::Function
+  PostEntity:
+    Properties:
+      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      Events:
+        Create:
+          Properties:
+            Method: POST
+            Path: /entities
+          Type: Api
+      Handler: HelloWorld::HelloWorld.Function::PostFunctionHandlerAsync
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: EntitiesTable
+    Type: AWS::Serverless::Function
+  PutEntity:
+    Properties:
+      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      Events:
+        Update:
+          Properties:
+            Method: PUT
+            Path: /entities/{id}
+          Type: Api
+      Handler: HelloWorld::HelloWorld.Function::PutFunctionHandlerAsync
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: EntitiesTable
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31

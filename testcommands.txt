@@ -1,0 +1,11 @@
+# List all entities
+curl -X GET http://127.0.0.1:3000/entities
+
+# Create a new entity
+curl -X POST -H "Content-Type: application/json" -d '{"Id":"3","Name":"Student"}' http://127.0.0.1:3000/entities
+
+# Update an existing entity
+curl -X PUT -H "Content-Type: application/json" -d '{"Name":"Student----updated"}' http://127.0.0.1:3000/entities/3
+
+# Delete a existing entity
+curl -X DELETE http://127.0.0.1:3000/entities/3

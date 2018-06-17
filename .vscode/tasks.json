@@ -1,0 +1,160 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "dotnet build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "-c",
+                "Debug",
+                "HelloWorld.csproj"
+            ],
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}/src/HelloWorld"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "dotnet publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "-c",
+                "Release",
+                "HelloWorld.csproj"
+            ],
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}/src/HelloWorld"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "SAM Package",
+            "command": "sam",
+            "type": "process",
+            "args": [
+                "package",
+                "--template-file",
+                "template.yaml",
+                "--output-template-file",
+                "packaged.yaml",
+                "--s3-bucket",
+                "abelperez-temp"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn":"dotnet publish",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "SAM Local start API",
+            "command": "sudo",
+            "type": "process",
+            "args": [
+                "sam",
+                "local",
+                "start-api",
+                "--docker-network",
+                "lambda-local",
+                "--env-vars",
+                "env.json"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn":"dotnet publish",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "DynamoDb local", 
+            "command": "sudo",
+            "type": "process",
+            "args": [
+                "docker",
+                "run",
+                "-d",
+                "-v",
+                "${workspaceFolder}:/dynamodb_local_db",
+                "-p",
+                "8000:8000",
+                "--network",
+                "lambda-local",
+                "--name",
+                "dynamodb",
+                "cnadiminti/dynamodb-local"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "SAM Deploy",
+            "command": "sam",
+            "type": "process",
+            "args": [
+                "deploy",
+                "--template-file",
+                "packaged.yaml",
+                "--stack-name",
+                "dynamodb-crud",
+                "--capabilities",
+                "CAPABILITY_IAM"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn":"SAM Package",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CloudFormation Get Outpus",
+            "command": "aws",
+            "type": "process",
+            "args": [
+                "cloudformation",
+                "describe-stacks",
+                "--stack-name",
+                "dynamodb-crud",
+                "--query",
+                "Stacks[].Outputs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

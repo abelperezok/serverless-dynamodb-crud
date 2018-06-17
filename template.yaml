@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    Sample SAM Template for dynamodb-crud
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 60
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref EntitiesTable
+    Runtime: dotnetcore2.0
+
+
+Resources:
+
+    # HelloWorldFunction:
+    #     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    #     Properties:
+    #         CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+    #         Handler: HelloWorld::HelloWorld.Function::FunctionHandler
+    #         Runtime: dotnetcore2.0
+    #         Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+    #             Variables:
+    #                 PARAM1: VALUE
+    #         Events:
+    #             HelloWorld:
+    #                 Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+    #                 Properties:
+    #                     Path: /hello
+    #                     Method: get
+    
+    # GET Entity Function 
+    # GET /entities
+    GetEntity:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: HelloWorld::HelloWorld.Function::GetFunctionHandlerAsync
+        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Events:
+          GetList:
+            Type: Api
+            Properties:
+              Path: /entities
+              Method: GET
+        Policies:
+          - DynamoDBReadPolicy:
+              TableName: !Ref EntitiesTable
+
+    # POST Entity Function 
+    # POST /entities {id:1, Name:"Person"}
+    PostEntity:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: HelloWorld::HelloWorld.Function::PostFunctionHandlerAsync
+        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Policies:
+          - DynamoDBCrudPolicy:
+              TableName: !Ref EntitiesTable
+        Events:
+          Create:
+            Type: Api
+            Properties:
+              Path: /entities
+              Method: POST
+
+    # PUT Entity Function 
+    # PUT /entities/1 {Name:"Person"}
+    PutEntity:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: HelloWorld::HelloWorld.Function::PutFunctionHandlerAsync
+        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Policies:
+          - DynamoDBCrudPolicy:
+              TableName: !Ref EntitiesTable
+        Events:
+          Update:
+            Type: Api
+            Properties:
+              Path: /entities/{id}
+              Method: PUT
+
+    # DELETE Entity Function 
+    # DELETE /entities/1
+    DeleteEntity:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: HelloWorld::HelloWorld.Function::DeleteFunctionHandlerAsync
+        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Policies:
+          - DynamoDBCrudPolicy:
+              TableName: !Ref EntitiesTable
+        Events:
+          Delete:
+            Type: Api
+            Properties:
+              Path: /entities/{id}
+              Method: DELETE
+    
+    # DynamoDb table 
+    EntitiesTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties: 
+        AttributeDefinitions:
+          - AttributeName: "Id"
+            AttributeType: "N"
+        KeySchema: 
+          - AttributeName: "Id"
+            KeyType: "HASH"
+        ProvisionedThroughput: 
+          ReadCapacityUnits: "5"
+          WriteCapacityUnits: "5"
+
+
+Outputs:
+
+    EntitiesApiUrl:
+      Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/entities"
+
+    EntitiesTableName:
+      Description: "DynamoDb table for Entities"
+      Value: !Ref EntitiesTable
+
+
+    # HelloWorldFunction:
+    #   Description: "Hello World Lambda Function ARN"
+    #   Value: !GetAtt HelloWorldFunction.Arn
+
+    # HelloWorldFunctionIamRole:
+    #   Description: "Implicit IAM Role created for Hello World function"
+    #   Value: !GetAtt HelloWorldFunctionRole.Arn
