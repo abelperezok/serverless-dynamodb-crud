@@ -40,6 +40,22 @@
             }
         },
         {
+            "label": "dotnet test",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test"
+            ],
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}/test/HelloWorld.Test"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "SAM Package",
             "command": "sam",
             "type": "process",

@@ -10,56 +10,70 @@ using Xunit;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.TestUtilities;
 using Amazon.Lambda.APIGatewayEvents;
+using System.Text;
 
 namespace HelloWorld.Tests
 {
-  public class FunctionTest
-  {
-    private static readonly HttpClient client = new HttpClient();
-
-    private static async Task<string> GetCallingIP()
+    public class FunctionTest
     {
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Add("User-Agent", "AWS Lambda .Net Client");
+        private static readonly HttpClient client = new HttpClient();
+        private static string baseUrl = "http://127.0.0.1:3000";
 
-            var stringTask = client.GetStringAsync("http://checkip.amazonaws.com/").ConfigureAwait(continueOnCapturedContext:false);
+        [Fact]
+        public async Task TestGetFunctionHandlerAsync()
+        {
+            Console.WriteLine("Make sure you started 'sam local start-api'");
 
-            var msg = await stringTask;
-            return msg.Replace("\n","");
+            var response = await client.GetAsync(baseUrl + "/entities");
+            
+            Assert.Equal(200, (int)response.StatusCode);
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.StartsWith("[", content);
+            Assert.EndsWith("]", content);
+        }
+
+        [Fact]
+        public async Task TestPostFunctionHandlerAsync()
+        {
+            Console.WriteLine("Make sure you started 'sam local start-api'");
+
+            var entity = new { Id = 1, Name = "NewEntity" };
+            var entityJson = JsonConvert.SerializeObject(entity);
+            var stringContent = new StringContent(entityJson, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(baseUrl + "/entities", stringContent);
+            
+            Assert.Equal(200, (int)response.StatusCode);
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.Equal("OK", content);
+        }
+
+        [Fact]
+        public async Task TestPutFunctionHandlerAsync()
+        {
+            Console.WriteLine("Make sure you started 'sam local start-api'");
+
+            var entity = new { Name = "NewEntity-Updated" };
+            var entityJson = JsonConvert.SerializeObject(entity);
+            var stringContent = new StringContent(entityJson, Encoding.UTF8, "application/json");
+
+            var response = await client.PutAsync(baseUrl + "/entities/1", stringContent);
+            
+            Assert.Equal(200, (int)response.StatusCode);
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.Equal("{\"result\":\"success\"}", content);
+        }
+
+        [Fact]
+        public async Task TestDeleteFunctionHandlerAsync()
+        {
+            Console.WriteLine("Make sure you started 'sam local start-api'");
+
+            var response = await client.DeleteAsync(baseUrl + "/entities/1");
+            
+            Assert.Equal(200, (int)response.StatusCode);
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.Equal("{\"result\":\"success\"}", content);
+        }
     }
-
-    // [Fact]
-    // public void TestHelloWorldFunctionHandler()
-    // {
-    //         TestLambdaContext context;
-    //         APIGatewayProxyRequest request;
-    //         APIGatewayProxyResponse response;
-
-    //         request = new APIGatewayProxyRequest();
-    //         context = new TestLambdaContext();
-    //         string location = GetCallingIP().Result;
-    //         Dictionary<string, string> body = new Dictionary<string, string>
-    //         {
-    //             { "message", "hello world" },
-    //             { "location", location },
-    //         };
-
-    //         var ExpectedResponse = new APIGatewayProxyResponse
-    //         {
-    //             Body = JsonConvert.SerializeObject(body),
-    //             StatusCode = 200,
-    //             Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-    //         };
-
-    //         var function = new Function();
-    //         response = function.FunctionHandler(request, context);
-
-    //         Console.WriteLine("Lambda Response: \n" + response.Body);
-    //         Console.WriteLine("Expected Response: \n" + ExpectedResponse.Body);
-
-    //         Assert.Equal(ExpectedResponse.Body, response.Body);
-    //         Assert.Equal(ExpectedResponse.Headers, response.Headers);
-    //         Assert.Equal(ExpectedResponse.StatusCode, response.StatusCode);
-    // }
-  }
 }
