@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ using System.Text;
 
 namespace HelloWorld.Tests
 {
-    public class FunctionTest
+    public class ApiIntegrationTests
     {
         private static readonly HttpClient client = new HttpClient();
         private static string baseUrl = "http://127.0.0.1:3000";
