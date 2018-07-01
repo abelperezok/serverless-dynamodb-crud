@@ -1,15 +1,33 @@
-# List all entities
-curl -X GET http://127.0.0.1:3000/entities
+# Retrieve all entities for a given user
+curl -X GET http://127.0.0.1:3000/users/0/entities
+
+# Retrieve a specific entity
+curl -X GET http://127.0.0.1:3000/users/0/entities/1
 
 # Create a new entity
-curl -X POST -H "Content-Type: application/json" -d '{"Id":"3","Name":"Student"}' http://127.0.0.1:3000/entities
+curl -X POST -H "Content-Type: application/json" -d '{"Name":"Student"}' http://127.0.0.1:3000/users/0/entities
 
 # Update an existing entity
-curl -X PUT -H "Content-Type: application/json" -d '{"Name":"Student----updated"}' http://127.0.0.1:3000/entities/3
+curl -X PUT -H "Content-Type: application/json" -d '{"Name":"Student----updated"}' http://127.0.0.1:3000/users/0/entities/3
 
 # Delete a existing entity
-curl -X DELETE http://127.0.0.1:3000/entities/3
+curl -X DELETE http://127.0.0.1:3000/users/0/entities/3
 
 
-# local statck docker image
+# localstatck docker image
 docker run -it -p 4567-4578:4567-4578 -p 8080:8080 --network lambda-local --name localstack localstack/localstack
+
+
+sam package \
+--template-file template.yaml \
+--output-template-file packaged.yaml \
+--s3-bucket abelperez-temp
+
+sam deploy \
+--template-file packaged.yaml \
+--stack-name dynamodb-crud \
+--capabilities CAPABILITY_IAM
+
+aws cloudformation describe-stacks \
+--stack-name dynamodb-crud \
+--query 'Stacks[].Outputs'

@@ -34,7 +34,6 @@ namespace HelloWorld.Tests
                     var entity = new Entity 
                     {
                         UserId = i.ToString(),
-                        Id = j.ToString(),
                         Name = $"entity{i}-{j}"
                     };
                     await entityRepository.PutItemAsync(dynamoDbLocalTableName, entity);
@@ -42,6 +41,20 @@ namespace HelloWorld.Tests
                 }
             }
             Console.WriteLine("Done");
+
+            Console.WriteLine("Listing data for user 0");
+            var list0 = await entityRepository.QueryEntitiesByUserAsync(dynamoDbLocalTableName, "0");
+            foreach (var item in list0)
+            {
+                Console.WriteLine($"user id = {item.UserId}, entity id = {item.Id}, entity name = {item.Name}");
+            }
+
+            Console.WriteLine("Listing data for user 1");
+            var list1 = await entityRepository.QueryEntitiesByUserAsync(dynamoDbLocalTableName, "1");
+            foreach (var item in list1)
+            {
+                Console.WriteLine($"user id = {item.UserId}, entity id = {item.Id}, entity name = {item.Name}");
+            }
         }
 
         public void Dispose()

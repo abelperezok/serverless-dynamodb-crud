@@ -24,12 +24,12 @@ namespace HelloWorld.Tests
         {
             Console.WriteLine("Make sure you started 'sam local start-api'");
 
-            var response = await client.GetAsync(baseUrl + "/entities");
+            var response = await client.GetAsync(baseUrl + "/users/abel/entities");
             
             Assert.Equal(200, (int)response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
             Assert.StartsWith("[", content);
-            Assert.EndsWith("]", content);
+            Assert.EndsWith("]"+Environment.NewLine, content);
         }
 
         [Fact]
@@ -37,15 +37,17 @@ namespace HelloWorld.Tests
         {
             Console.WriteLine("Make sure you started 'sam local start-api'");
 
-            var entity = new { Id = 1, Name = "NewEntity" };
+            var entity = new { Name = "NewEntity" };
             var entityJson = JsonConvert.SerializeObject(entity);
             var stringContent = new StringContent(entityJson, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync(baseUrl + "/entities", stringContent);
+            var response = await client.PostAsync(baseUrl + "/users/abel/entities", stringContent);
             
             Assert.Equal(200, (int)response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            Assert.Equal("OK", content);
+            Assert.StartsWith("{", content);
+            Assert.Contains("NewEntity", content);
+            Assert.EndsWith("}"+Environment.NewLine, content);
         }
 
         [Fact]
@@ -57,11 +59,13 @@ namespace HelloWorld.Tests
             var entityJson = JsonConvert.SerializeObject(entity);
             var stringContent = new StringContent(entityJson, Encoding.UTF8, "application/json");
 
-            var response = await client.PutAsync(baseUrl + "/entities/1", stringContent);
+            var response = await client.PutAsync(baseUrl + "/users/abel/entities/1", stringContent);
             
             Assert.Equal(200, (int)response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            Assert.Equal("{\"result\":\"success\"}", content);
+            Assert.StartsWith("{", content);
+            Assert.Contains("NewEntity-Updated", content);
+            Assert.EndsWith("}"+Environment.NewLine, content);
         }
 
         [Fact]
@@ -69,11 +73,10 @@ namespace HelloWorld.Tests
         {
             Console.WriteLine("Make sure you started 'sam local start-api'");
 
-            var response = await client.DeleteAsync(baseUrl + "/entities/1");
+            var response = await client.DeleteAsync(baseUrl + "/users/abel/entities/1");
             
             Assert.Equal(200, (int)response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            Assert.Equal("{\"result\":\"success\"}", content);
         }
     }
 }

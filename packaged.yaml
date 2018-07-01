@@ -14,7 +14,7 @@ Outputs:
   EntitiesApiUrl:
     Description: API Gateway endpoint URL for Prod stage for Hello World function
     Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/entities
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/users/0/entities
   EntitiesTableName:
     Description: DynamoDb table for Entities
     Value:
@@ -22,12 +22,12 @@ Outputs:
 Resources:
   DeleteEntity:
     Properties:
-      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      CodeUri: s3://abelperez-temp/efe5b5ede905408bef3040973a20cbd2
       Events:
         Delete:
           Properties:
             Method: DELETE
-            Path: /entities/{id}
+            Path: /users/{userid}/entities/{entityid}
           Type: Api
       Handler: HelloWorld::HelloWorld.Function::DeleteFunctionHandlerAsync
       Policies:
@@ -38,25 +38,55 @@ Resources:
   EntitiesTable:
     Properties:
       AttributeDefinitions:
-      - AttributeName: Id
-        AttributeType: N
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: entity_id
+        AttributeType: S
+      - AttributeName: entity_name
+        AttributeType: S
       KeySchema:
-      - AttributeName: Id
+      - AttributeName: user_id
         KeyType: HASH
+      - AttributeName: entity_id
+        KeyType: RANGE
+      LocalSecondaryIndexes:
+      - IndexName: entity_id_name
+        KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: entity_name
+          KeyType: RANGE
+        Projection:
+          ProjectionType: KEYS_ONLY
       ProvisionedThroughput:
-        ReadCapacityUnits: '5'
-        WriteCapacityUnits: '5'
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
     Type: AWS::DynamoDB::Table
-  GetEntity:
+  GetEntities:
     Properties:
-      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      CodeUri: s3://abelperez-temp/efe5b5ede905408bef3040973a20cbd2
       Events:
         GetList:
           Properties:
             Method: GET
-            Path: /entities
+            Path: /users/{userid}/entities
           Type: Api
-      Handler: HelloWorld::HelloWorld.Function::GetFunctionHandlerAsync
+      Handler: HelloWorld::HelloWorld.Function::GetListFunctionHandlerAsync
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: EntitiesTable
+    Type: AWS::Serverless::Function
+  GetEntity:
+    Properties:
+      CodeUri: s3://abelperez-temp/efe5b5ede905408bef3040973a20cbd2
+      Events:
+        GetItem:
+          Properties:
+            Method: GET
+            Path: /users/{userid}/entities/{entityid}
+          Type: Api
+      Handler: HelloWorld::HelloWorld.Function::GetItemFunctionHandlerAsync
       Policies:
       - DynamoDBReadPolicy:
           TableName:
@@ -64,12 +94,12 @@ Resources:
     Type: AWS::Serverless::Function
   PostEntity:
     Properties:
-      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      CodeUri: s3://abelperez-temp/efe5b5ede905408bef3040973a20cbd2
       Events:
         Create:
           Properties:
             Method: POST
-            Path: /entities
+            Path: /users/{userid}/entities
           Type: Api
       Handler: HelloWorld::HelloWorld.Function::PostFunctionHandlerAsync
       Policies:
@@ -79,12 +109,12 @@ Resources:
     Type: AWS::Serverless::Function
   PutEntity:
     Properties:
-      CodeUri: s3://abelperez-temp/8bc366172d0d7f913525a3a643a50457
+      CodeUri: s3://abelperez-temp/efe5b5ede905408bef3040973a20cbd2
       Events:
         Update:
           Properties:
             Method: PUT
-            Path: /entities/{id}
+            Path: /users/{userid}/entities/{entityid}
           Type: Api
       Handler: HelloWorld::HelloWorld.Function::PutFunctionHandlerAsync
       Policies:

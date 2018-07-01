@@ -17,145 +17,95 @@ namespace HelloWorld
 
     public class Function
     {
-        // private static readonly Lazy<DynamoDbClient> _dynamoDb = new Lazy<DynamoDbClient>(
-        //     () => {
-        //         var samLocal = Environment.GetEnvironmentVariable("AWS_SAM_LOCAL");
-        //         if (samLocal != null)
-        //             return new DynamoDbClient("http://localstack:4569");
-        //         return new DynamoDbClient(null);
-        //      }
-        // );
+        private string Json(object item)
+        {
+            var json = item != null 
+                ? JsonConvert.SerializeObject(item, Formatting.Indented)
+                : " ";
+            return json + Environment.NewLine;
+        }
 
-        // private static DynamoDbClient dynamoDb => _dynamoDb.Value;
-        // private static IDynamoDbMapper entityMapper = new EntityDynamoDbMapper();
-
-
-
-
-
-
-
-
+        private APIGatewayProxyResponse JsonAPIGatewayProxyResponse(object body = null, int statusCode = 200)
+        {
+            return new APIGatewayProxyResponse
+            {
+                Body = Json(body),
+                StatusCode = statusCode,
+                Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
+            };
+        }
 
         private static readonly Lazy<EntityDynamoDbRepository> _dynamoDbRepo = new Lazy<EntityDynamoDbRepository>(
             () => {
                 var samLocal = Environment.GetEnvironmentVariable("AWS_SAM_LOCAL");
                 if (samLocal != null)
-                    return new EntityDynamoDbRepository("http://localstack:4569");
+                    return new EntityDynamoDbRepository("http://localstack:4569"); //using localstack
                 return new EntityDynamoDbRepository(null);
              }
         );
-        private static EntityDynamoDbRepository dynamoDbRepo => _dynamoDbRepo.Value;
+        private static EntityDynamoDbRepository entitiesRepo => _dynamoDbRepo.Value;
 
 
-        public async Task<APIGatewayProxyResponse> GetFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+
+
+
+
+
+        public async Task<APIGatewayProxyResponse> GetListFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
         {
             var table = Environment.GetEnvironmentVariable("TABLE_NAME");
+            var userid = apigProxyEvent.PathParameters["userid"];
+            var list = await entitiesRepo.QueryEntitiesByUserAsync(table, userid);
+            return JsonAPIGatewayProxyResponse(list);
+        }
 
-            var list = await dynamoDbRepo.ScanAsync(table);
+        public async Task<APIGatewayProxyResponse> GetItemFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+        {
+            var table = Environment.GetEnvironmentVariable("TABLE_NAME");
+            var userid = apigProxyEvent.PathParameters["userid"];
+            var entityid = apigProxyEvent.PathParameters["entityid"];
 
-            return new APIGatewayProxyResponse
-            {
-                Body = JsonConvert.SerializeObject(list),
-                StatusCode = 200,
-                Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-            };
+            var item = await entitiesRepo.GetItemAsync(table, userid, entityid);
+
+            if (item == null)
+               return JsonAPIGatewayProxyResponse(null, 404);
+
+            return JsonAPIGatewayProxyResponse(item);
         }
 
         public async Task<APIGatewayProxyResponse> PostFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
         {
             var table = Environment.GetEnvironmentVariable("TABLE_NAME");
-            var body = JsonConvert.DeserializeObject<Dictionary<string,object>>(apigProxyEvent.Body);
-            var id = Convert.ToString(body["Id"]);
+            var entity = JsonConvert.DeserializeObject<Entity>(apigProxyEvent.Body);
+            entity.UserId = apigProxyEvent.PathParameters["userid"];
 
-            //await dynamoDb.PutItemAsync(table, id, body, entityMapper);
+            var result = await entitiesRepo.PutItemAsync(table, entity);
 
-            return new APIGatewayProxyResponse
-            {
-                Body = "OK",
-                StatusCode = 200,
-                Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-            };
+            return JsonAPIGatewayProxyResponse(result);
         }
 
+        public async Task<APIGatewayProxyResponse> PutFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+        {
+            var table = Environment.GetEnvironmentVariable("TABLE_NAME");
+            var entity = JsonConvert.DeserializeObject<Entity>(apigProxyEvent.Body);
+            entity.Id = apigProxyEvent.PathParameters["entityid"];
+            entity.UserId = apigProxyEvent.PathParameters["userid"];
 
+            var result = await entitiesRepo.PutItemAsync(table, entity);
 
+            return JsonAPIGatewayProxyResponse(result);
+        }
 
-        // public async Task<APIGatewayProxyResponse> GetFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
-        // {
-        //     var table = Environment.GetEnvironmentVariable("TABLE_NAME");
-        //     var list = await dynamoDb.ScanAsync(table, entityMapper);
+        public async Task<APIGatewayProxyResponse> DeleteFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+        {
+            var table = Environment.GetEnvironmentVariable("TABLE_NAME");
+            var entity = new Entity();
+            entity.Id = apigProxyEvent.PathParameters["entityid"];
+            entity.UserId = apigProxyEvent.PathParameters["userid"];
 
-        //     return new APIGatewayProxyResponse
-        //     {
-        //         Body = JsonConvert.SerializeObject(list),
-        //         StatusCode = 200,
-        //         Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-        //     };
-        // }
+            await entitiesRepo.DeleteItemAsync(table, entity);
 
-        // public async Task<APIGatewayProxyResponse> PostFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
-        // {
-        //     var table = Environment.GetEnvironmentVariable("TABLE_NAME");
-        //     var body = JsonConvert.DeserializeObject<Dictionary<string,object>>(apigProxyEvent.Body);
-        //     var id = Convert.ToString(body["Id"]);
-
-        //     await dynamoDb.PutItemAsync(table, id, body, entityMapper);
-
-        //     return new APIGatewayProxyResponse
-        //     {
-        //         Body = "OK",
-        //         StatusCode = 200,
-        //         Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-        //     };
-        // }
-
-
-        // public async Task<APIGatewayProxyResponse> PutFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
-        // {
-        //     var table = Environment.GetEnvironmentVariable("TABLE_NAME");
-        //     var id = apigProxyEvent.PathParameters["id"];
-        //     var body = JsonConvert.DeserializeObject<Dictionary<string,object>>(apigProxyEvent.Body);
-
-        //     var item = await dynamoDb.GetItemAsync(table, id, entityMapper);
-        //     if (item == null)
-        //         return new APIGatewayProxyResponse 
-        //         {
-        //             Body = "Not Found",
-        //             StatusCode = 404
-        //         };
-
-        //     await dynamoDb.PutItemAsync(table, id, body, entityMapper);
-
-        //     return new APIGatewayProxyResponse
-        //     {
-        //         Body = @"{""result"":""success""}",
-        //         StatusCode = 200,
-        //         Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-        //     };
-        // }
-
-        // public async Task<APIGatewayProxyResponse> DeleteFunctionHandlerAsync(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
-        // {
-        //     var table = Environment.GetEnvironmentVariable("TABLE_NAME");
-        //     var id = apigProxyEvent.PathParameters["id"];
-
-        //     var item = await dynamoDb.GetItemAsync(table, id, entityMapper);
-        //     if (item == null)
-        //         return new APIGatewayProxyResponse 
-        //         {
-        //             Body = "Not Found",
-        //             StatusCode = 404
-        //         };
-
-        //     await dynamoDb.DeleteItemAsync(table, id);
-
-        //     return new APIGatewayProxyResponse
-        //     {
-        //         Body = @"{""result"":""success""}",
-        //         StatusCode = 200,
-        //         Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
-        //     };
-        // }
+            return JsonAPIGatewayProxyResponse();
+        }
     }
 }

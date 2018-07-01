@@ -15,41 +15,42 @@ Globals:
 
 Resources:
 
-    # HelloWorldFunction:
-    #     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    #     Properties:
-    #         CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
-    #         Handler: HelloWorld::HelloWorld.Function::FunctionHandler
-    #         Runtime: dotnetcore2.0
-    #         Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-    #             Variables:
-    #                 PARAM1: VALUE
-    #         Events:
-    #             HelloWorld:
-    #                 Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-    #                 Properties:
-    #                     Path: /hello
-    #                     Method: get
-    
-    # GET Entity Function 
-    # GET /entities
-    GetEntity:
+    # Get all entities for a given user id
+    # GET /users/user0/entities
+    GetEntities:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: HelloWorld::HelloWorld.Function::GetFunctionHandlerAsync
+        Handler: HelloWorld::HelloWorld.Function::GetListFunctionHandlerAsync
         CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Policies:
+          - DynamoDBReadPolicy:
+              TableName: !Ref EntitiesTable
         Events:
           GetList:
             Type: Api
             Properties:
-              Path: /entities
+              Path: /users/{userid}/entities
               Method: GET
+    
+    # Get a specific entity given user id and entity id
+    # GET /users/user0/entities/entity0
+    GetEntity:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: HelloWorld::HelloWorld.Function::GetItemFunctionHandlerAsync
+        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
         Policies:
           - DynamoDBReadPolicy:
               TableName: !Ref EntitiesTable
+        Events:
+          GetItem:
+            Type: Api
+            Properties:
+              Path: /users/{userid}/entities/{entityid}
+              Method: GET
 
-    # POST Entity Function 
-    # POST /entities {id:1, Name:"Person"}
+    # Create a new entity for a given user 
+    # POST /users/user0/entities {Name:"Person"}
     PostEntity:
       Type: AWS::Serverless::Function
       Properties:
@@ -62,11 +63,11 @@ Resources:
           Create:
             Type: Api
             Properties:
-              Path: /entities
+              Path: /users/{userid}/entities
               Method: POST
 
-    # PUT Entity Function 
-    # PUT /entities/1 {Name:"Person"}
+    # Updates an entity for a given user and entity id 
+    # PUT /users/user0/entities/1 {Name:"Person -- updated"}
     PutEntity:
       Type: AWS::Serverless::Function
       Properties:
@@ -79,11 +80,11 @@ Resources:
           Update:
             Type: Api
             Properties:
-              Path: /entities/{id}
+              Path: /users/{userid}/entities/{entityid}
               Method: PUT
 
-    # DELETE Entity Function 
-    # DELETE /entities/1
+    # Delete an entity given a user and entity id
+    # DELETE /users/user0/entities/1
     DeleteEntity:
       Type: AWS::Serverless::Function
       Properties:
@@ -96,39 +97,46 @@ Resources:
           Delete:
             Type: Api
             Properties:
-              Path: /entities/{id}
+              Path: /users/{userid}/entities/{entityid}
               Method: DELETE
     
-    # DynamoDb table 
+    # DynamoDb table  -- pending testing on aws
     EntitiesTable:
-      Type: "AWS::DynamoDB::Table"
+      Type: AWS::DynamoDB::Table
       Properties: 
-        AttributeDefinitions:
-          - AttributeName: "Id"
-            AttributeType: "N"
         KeySchema: 
-          - AttributeName: "Id"
-            KeyType: "HASH"
-        ProvisionedThroughput: 
-          ReadCapacityUnits: "5"
-          WriteCapacityUnits: "5"
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: entity_id
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: entity_id
+            AttributeType: S
+          - AttributeName: entity_name
+            AttributeType: S
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        LocalSecondaryIndexes:
+          - IndexName: entity_id_name
+            KeySchema: 
+              - AttributeName: user_id
+                KeyType: HASH
+              - AttributeName: entity_name
+                KeyType: RANGE
+            Projection:
+                ProjectionType: KEYS_ONLY
 
 
 Outputs:
 
     EntitiesApiUrl:
       Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/entities"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/users/0/entities"
 
     EntitiesTableName:
       Description: "DynamoDb table for Entities"
       Value: !Ref EntitiesTable
 
-
-    # HelloWorldFunction:
-    #   Description: "Hello World Lambda Function ARN"
-    #   Value: !GetAtt HelloWorldFunction.Arn
-
-    # HelloWorldFunctionIamRole:
-    #   Description: "Implicit IAM Role created for Hello World function"
-    #   Value: !GetAtt HelloWorldFunctionRole.Arn
