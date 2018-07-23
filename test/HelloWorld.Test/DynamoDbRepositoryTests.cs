@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using Xunit;
 using Amazon.DynamoDBv2.Model;
 
-namespace HelloWorld.Tests
+namespace HelloWorld.Test
 {
     public class DynamoDbRepositoryTests : IDisposable
     {
-        private static string dynamoDbLocalEndpoint = "http://localhost:4569"; // using localstack
-        private static string dynamoDbLocalTableName = "myproject_entities"; 
+        private static string templatePath = "../../../../../template.yaml"; // SAM template (CloudFormation)
+        private const string tableLogicalName = "EntitiesTable"; // Logical name inside the template
+        private static string dynamoDbLocalEndpoint = "http://localhost:8000"; // using local dynamodb
+        private static string dynamoDbLocalTableName = "temp_entities"; 
 
         private LocalDynamoDbClient localDynamoDbClient;
         private EntityDynamoDbRepository entityRepository;
@@ -17,11 +19,25 @@ namespace HelloWorld.Tests
         public DynamoDbRepositoryTests()
         {
             this.localDynamoDbClient = new LocalDynamoDbClient(dynamoDbLocalEndpoint);
-            this.localDynamoDbClient.CreateTable(dynamoDbLocalTableName);
+            this.localDynamoDbClient.CreateTable(dynamoDbLocalTableName, templatePath, tableLogicalName);
             this.entityRepository = new EntityDynamoDbRepository(dynamoDbLocalEndpoint);
         }
 
+        [Fact]
+        public void TestCreateLocalTable()
+        {
+            var tableName = "generator_entities";
+            if (this.localDynamoDbClient.TableExists(tableName))
+            {
+                Console.WriteLine($"Table {tableName} exists, deleting it.");
+                this.localDynamoDbClient.DeleteTable(tableName);
+                Console.WriteLine($"Table {tableName} deleted.");
+            }
 
+            Console.WriteLine($"Creating DynamoDB table {tableName}");
+            this.localDynamoDbClient.CreateTable(tableName, templatePath, tableLogicalName);
+            Console.WriteLine($"DynamoDB table {tableName} created");
+        }
 
         [Fact]
         public async Task TestPutSomeDataInDynamoDbAsync()
@@ -60,7 +76,7 @@ namespace HelloWorld.Tests
         public void Dispose()
         {
             this.localDynamoDbClient.DeleteTable(dynamoDbLocalTableName);
-            Console.WriteLine("DynamoDB table deleted");
+            Console.WriteLine($"DynamoDB table {dynamoDbLocalTableName} deleted");
         }
     }
 }

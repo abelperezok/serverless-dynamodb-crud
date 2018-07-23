@@ -39,7 +39,7 @@ namespace HelloWorld
             () => {
                 var samLocal = Environment.GetEnvironmentVariable("AWS_SAM_LOCAL");
                 if (samLocal != null)
-                    return new EntityDynamoDbRepository("http://localstack:4569"); //using localstack
+                    return new EntityDynamoDbRepository("http://dynamodb:8000"); //using localstack
                 return new EntityDynamoDbRepository(null);
              }
         );

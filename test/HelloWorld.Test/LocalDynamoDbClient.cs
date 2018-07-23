@@ -5,7 +5,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using System.Threading;
 
-namespace HelloWorld.Tests
+namespace HelloWorld.Test
 {
     public class LocalDynamoDbClient
     {
@@ -27,43 +27,6 @@ namespace HelloWorld.Tests
             return new AmazonDynamoDBClient(config);
         }
 
-        private async Task<CreateTableResponse> CreateTableAsync(string tableName)
-        {
-            var createTableReq = new CreateTableRequest
-            {
-                TableName = tableName,
-                KeySchema = new List<KeySchemaElement>
-                {
-                    new KeySchemaElement {AttributeName = "user_id", KeyType = KeyType.HASH },
-                    new KeySchemaElement {AttributeName = "entity_id", KeyType = KeyType.RANGE }
-                },
-                AttributeDefinitions = new List<AttributeDefinition>{
-                    new AttributeDefinition { AttributeName = "user_id", AttributeType = ScalarAttributeType.S },
-                    new AttributeDefinition { AttributeName = "entity_id", AttributeType = ScalarAttributeType.S },
-                    new AttributeDefinition { AttributeName = "entity_name", AttributeType = ScalarAttributeType.S }
-                },
-                ProvisionedThroughput = new ProvisionedThroughput(5, 5),
-                LocalSecondaryIndexes = new List<LocalSecondaryIndex>
-                {
-                    new LocalSecondaryIndex
-                    {
-                        IndexName = "entity_id_name",
-                        KeySchema = new List<KeySchemaElement>
-                        {
-                            new KeySchemaElement {AttributeName = "user_id", KeyType = KeyType.HASH },
-                            new KeySchemaElement {AttributeName = "entity_name", KeyType = KeyType.RANGE }
-                        },
-                        Projection = new Projection
-                        {
-                            ProjectionType = ProjectionType.KEYS_ONLY
-                        }
-                    }
-                }
-            };
-
-            return await dynamoDbClient.CreateTableAsync(createTableReq);
-        }
-
         private void WaitUntilTableIsActive(string tableName)
         {
             var currentStatus = TableStatus.CREATING;
@@ -79,22 +42,26 @@ namespace HelloWorld.Tests
             logAction("Table ready !");
         }
 
-        private async Task<DeleteTableResponse> DeleteTableAsync(string tableName)
+        public bool TableExists(string tableName)
         {
-            return await dynamoDbClient.DeleteTableAsync(tableName);
+            var tableTask = dynamoDbClient.ListTablesAsync();
+            tableTask.Wait();
+            return tableTask.Result.TableNames.Contains(tableName);
         }
 
-        public void CreateTable(string tableName)
+        public void CreateTable(string tableName, string templatePath, string logicalName)
         {
-            var table = CreateTableAsync(tableName);
-            table.Wait();
+            var createTableReq = TemplateParser.GetDynamoDbTable(templatePath, logicalName);
+            createTableReq.TableName = tableName;
+            var tableTask = dynamoDbClient.CreateTableAsync(createTableReq);
+            tableTask.Wait();
             WaitUntilTableIsActive(tableName);
         }
 
         public void DeleteTable(string tableName)
         {
-            var delete = DeleteTableAsync(tableName);
-            delete.Wait();
+            var deleteTask = dynamoDbClient.DeleteTableAsync(tableName);
+            deleteTask.Wait();
         }
     }
 }

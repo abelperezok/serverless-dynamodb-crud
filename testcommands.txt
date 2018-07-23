@@ -17,6 +17,51 @@ curl -X DELETE http://127.0.0.1:3000/users/0/entities/3
 # localstatck docker image
 docker run -it -p 4567-4578:4567-4578 -p 8080:8080 --network lambda-local --name localstack localstack/localstack
 
+# local docker dynamodb 
+docker run -d -v ${workspaceFolder}:/dynamodb_local_db -p 8000:8000 --network lambda-local --name dynamodb cnadiminti/dynamodb-local
+
+
+
+# using dotnet commands
+
+dotnet lambda package --configuration Release --framework netcoreapp2.0
+
+dotnet lambda deploy-serverless \
+--s3-bucket abelperez-temp \
+--s3-prefix dynamodb-serverless/ \
+--configuration Release \
+--framework netcoreapp2.0 \
+--stack-name dynamodb-serverless \
+--template ../../template.yaml \
+--region eu-west-1
+
+
+
+
+
+curl -X POST -H "Content-Type: application/json" -d '{"Name":"Student"}' https://fqdbv9i7d0.execute-api.eu-west-1.amazonaws.com/Prod/users/0/entities
+
+
+Enter CloudFormation Stack Name: (CloudFormation stack name for an AWS Serverless application)
+>>>dynamodb-serverless
+Enter S3 Bucket: (S3 bucket to upload the build output)
+>>>abelperez-temp
+Enter CloudFormation Template: (Path to the CloudFormation template)
+>>>../../template.yaml
+Enter AWS Region: (The region to connect to AWS services, if not set region will be detected from the environment.)
+>>>eu-west-1
+Enter Build Configuration: (Configuration to build with, for example Release or Debug.)
+>>>Release
+Enter Framework: (Target framework to compile, for example netcoreapp1.0.)
+>>>netcoreapp2.0
+
+
+
+
+
+
+
+
 
 sam package \
 --template-file template.yaml \

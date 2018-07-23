@@ -12,7 +12,7 @@ using Amazon.Lambda.TestUtilities;
 using Amazon.Lambda.APIGatewayEvents;
 using System.Text;
 
-namespace HelloWorld.Tests
+namespace HelloWorld.Test
 {
     public class ApiIntegrationTests
     {

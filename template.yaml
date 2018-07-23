@@ -100,7 +100,7 @@ Resources:
               Path: /users/{userid}/entities/{entityid}
               Method: DELETE
     
-    # DynamoDb table  -- pending testing on aws
+    # DynamoDb table
     EntitiesTable:
       Type: AWS::DynamoDB::Table
       Properties: 
