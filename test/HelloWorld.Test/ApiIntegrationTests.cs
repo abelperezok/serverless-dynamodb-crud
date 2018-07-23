@@ -20,63 +20,43 @@ namespace HelloWorld.Test
         private static string baseUrl = "http://127.0.0.1:3000";
 
         [Fact]
-        public async Task TestGetFunctionHandlerAsync()
+        public async Task TestCrudSequence()
         {
             Console.WriteLine("Make sure you started 'sam local start-api'");
 
-            var response = await client.GetAsync(baseUrl + "/users/abel/entities");
-            
-            Assert.Equal(200, (int)response.StatusCode);
-            var content = await response.Content.ReadAsStringAsync();
-            Assert.StartsWith("[", content);
-            Assert.EndsWith("]"+Environment.NewLine, content);
-        }
+            Console.WriteLine("Testing empty GET");
+            var getResponse = await client.GetAsync(baseUrl + "/users/localuser/entities");
+            Assert.Equal(200, (int)getResponse.StatusCode);
+            var getContent = await getResponse.Content.ReadAsStringAsync();
+            var getList = JsonConvert.DeserializeObject<List<Entity>>(getContent);
+            Assert.Equal(0, getList.Count);
 
-        [Fact]
-        public async Task TestPostFunctionHandlerAsync()
-        {
-            Console.WriteLine("Make sure you started 'sam local start-api'");
+            Console.WriteLine("Testing basic POST");
+            var postEntity = new { Name = "NewEntity" };
+            var postEntityJson = JsonConvert.SerializeObject(postEntity);
+            var postStringContent = new StringContent(postEntityJson, Encoding.UTF8, "application/json");
+            var postResponse = await client.PostAsync(baseUrl + "/users/localuser/entities", postStringContent);
+            Assert.Equal(200, (int)postResponse.StatusCode);
+            var postContent = await postResponse.Content.ReadAsStringAsync();
+            var postResult = JsonConvert.DeserializeObject<Entity>(postContent);
+            Assert.Equal("NewEntity", postResult.Name);
 
-            var entity = new { Name = "NewEntity" };
-            var entityJson = JsonConvert.SerializeObject(entity);
-            var stringContent = new StringContent(entityJson, Encoding.UTF8, "application/json");
+            Console.WriteLine("Testing basic PUT");
+            var putEntity = new { Name = "NewEntity-Updated" };
+            var putEntityJson = JsonConvert.SerializeObject(putEntity);
+            var putSringContent = new StringContent(putEntityJson, Encoding.UTF8, "application/json");
+            var putResponse = await client.PutAsync(baseUrl + "/users/localuser/entities/" + postResult.Id, putSringContent);
+            Assert.Equal(200, (int)putResponse.StatusCode);
+            var putContent = await putResponse.Content.ReadAsStringAsync();
+            var putResult = JsonConvert.DeserializeObject<Entity>(putContent);
+            Assert.Equal("NewEntity-Updated", putResult.Name);
 
-            var response = await client.PostAsync(baseUrl + "/users/abel/entities", stringContent);
-            
-            Assert.Equal(200, (int)response.StatusCode);
-            var content = await response.Content.ReadAsStringAsync();
-            Assert.StartsWith("{", content);
-            Assert.Contains("NewEntity", content);
-            Assert.EndsWith("}"+Environment.NewLine, content);
-        }
 
-        [Fact]
-        public async Task TestPutFunctionHandlerAsync()
-        {
-            Console.WriteLine("Make sure you started 'sam local start-api'");
-
-            var entity = new { Name = "NewEntity-Updated" };
-            var entityJson = JsonConvert.SerializeObject(entity);
-            var stringContent = new StringContent(entityJson, Encoding.UTF8, "application/json");
-
-            var response = await client.PutAsync(baseUrl + "/users/abel/entities/1", stringContent);
-            
-            Assert.Equal(200, (int)response.StatusCode);
-            var content = await response.Content.ReadAsStringAsync();
-            Assert.StartsWith("{", content);
-            Assert.Contains("NewEntity-Updated", content);
-            Assert.EndsWith("}"+Environment.NewLine, content);
-        }
-
-        [Fact]
-        public async Task TestDeleteFunctionHandlerAsync()
-        {
-            Console.WriteLine("Make sure you started 'sam local start-api'");
-
-            var response = await client.DeleteAsync(baseUrl + "/users/abel/entities/1");
-            
-            Assert.Equal(200, (int)response.StatusCode);
-            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Testing basic DELETE");
+            var deleteResponse = await client.DeleteAsync(baseUrl + "/users/localuser/entities/"+ postResult.Id);
+            Assert.Equal(200, (int)deleteResponse.StatusCode);
+            var deleteContent = await deleteResponse.Content.ReadAsStringAsync();
+            Assert.True(string.IsNullOrWhiteSpace(deleteContent));
         }
     }
 }
