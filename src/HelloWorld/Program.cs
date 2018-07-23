@@ -19,7 +19,7 @@ namespace HelloWorld
         {
             var json = item != null 
                 ? JsonConvert.SerializeObject(item, Formatting.Indented)
-                : " ";
+                : null;
             return json + Environment.NewLine;
         }
 
