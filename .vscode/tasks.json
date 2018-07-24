@@ -9,11 +9,11 @@
                 "build",
                 "-c",
                 "Debug",
-                "HelloWorld.csproj"
+                "Generator.Lambda.csproj"
             ],
             "problemMatcher": "$msCompile",
             "options": {
-                "cwd": "${workspaceFolder}/src/HelloWorld"
+                "cwd": "${workspaceFolder}/src/Generator.Lambda"
             },
             "group": {
                 "kind": "build",
@@ -28,11 +28,11 @@
                 "publish",
                 "-c",
                 "Release",
-                "HelloWorld.csproj"
+                "Generator.Lambda.csproj"
             ],
             "problemMatcher": "$msCompile",
             "options": {
-                "cwd": "${workspaceFolder}/src/HelloWorld"
+                "cwd": "${workspaceFolder}/src/Generator.Lambda"
             },
             "group": {
                 "kind": "build",
@@ -92,7 +92,7 @@
                 "env.json"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/src/Generator.Lambda"
             },
             "dependsOn":"dotnet publish",
             "group": {
