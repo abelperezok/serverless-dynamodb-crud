@@ -38,8 +38,7 @@ Resources:
     GetEntity:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: HelloWorld::HelloWorld.Function::GetItemFunctionHandlerAsync
-        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Handler: Generator.Lambda::Generator.Lambda.EntitiesFunctions::GetItemFunctionHandlerAsync
         Policies:
           - DynamoDBReadPolicy:
               TableName: !Ref EntitiesTable
@@ -55,8 +54,7 @@ Resources:
     PostEntity:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: HelloWorld::HelloWorld.Function::PostFunctionHandlerAsync
-        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Handler: Generator.Lambda::Generator.Lambda.EntitiesFunctions::PostFunctionHandlerAsync
         Policies:
           - DynamoDBCrudPolicy:
               TableName: !Ref EntitiesTable
@@ -72,8 +70,7 @@ Resources:
     PutEntity:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: HelloWorld::HelloWorld.Function::PutFunctionHandlerAsync
-        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Handler: Generator.Lambda::Generator.Lambda.EntitiesFunctions::PutFunctionHandlerAsync
         Policies:
           - DynamoDBCrudPolicy:
               TableName: !Ref EntitiesTable
@@ -89,8 +86,7 @@ Resources:
     DeleteEntity:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: HelloWorld::HelloWorld.Function::DeleteFunctionHandlerAsync
-        CodeUri: src/HelloWorld/bin/Release/netcoreapp2.0/publish
+        Handler: Generator.Lambda::Generator.Lambda.EntitiesFunctions::DeleteFunctionHandlerAsync
         Policies:
           - DynamoDBCrudPolicy:
               TableName: !Ref EntitiesTable

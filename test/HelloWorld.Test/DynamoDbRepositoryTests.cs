@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 using Amazon.DynamoDBv2.Model;
+using Generator.Lambda;
+using Generator.Domain;
 
 namespace HelloWorld.Test
 {
     public class DynamoDbRepositoryTests : IDisposable
     {
-        private static string templatePath = "../../../../../template.yaml"; // SAM template (CloudFormation)
+        private static string templatePath = "../../../../../src/Generator.Lambda/template.yaml"; // SAM template (CloudFormation)
         private const string tableLogicalName = "EntitiesTable"; // Logical name inside the template
         private static string dynamoDbLocalEndpoint = "http://localhost:8000"; // using local dynamodb
         private static string dynamoDbLocalTableName = "temp_entities"; 
@@ -47,7 +49,7 @@ namespace HelloWorld.Test
             {
                 for (int j = 0; j < 5; j++)
                 {
-                    var entity = new Entity 
+                    var entity = new Entity
                     {
                         UserId = i.ToString(),
                         Name = $"entity{i}-{j}"
