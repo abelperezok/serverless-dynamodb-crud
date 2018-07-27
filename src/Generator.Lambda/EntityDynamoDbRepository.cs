@@ -11,12 +11,15 @@ using Generator.Domain;
 
 namespace Generator.Lambda
 {
-    public class EntityDynamoDbRepository
+
+    public class EntityDynamoDbRepository : IEntityRepository
     {
         private static IAmazonDynamoDB _dynamoDbClient;
+        private readonly string _tableName;
 
-        public EntityDynamoDbRepository(string serviceURL)
+        public EntityDynamoDbRepository(string tableName, string serviceURL = null)
         {
+            _tableName = tableName;
             _dynamoDbClient = CreateDynamoDBClient(serviceURL);
         }
 
@@ -38,11 +41,11 @@ namespace Generator.Lambda
         }
 
 
-        public async Task<List<Entity>> QueryEntitiesByUserAsync(string tableName, string userId)
+        public async Task<List<Entity>> GetEntitiesByUserAsync(string userId)
         {
-            var queryRq = new QueryRequest 
-            { 
-                TableName = tableName,
+            var queryRq = new QueryRequest
+            {
+                TableName = _tableName,
                 KeyConditionExpression = "user_id = :userid",
                 ExpressionAttributeValues = new Dictionary<string, AttributeValue> { { ":userid", new AttributeValue(userId) } }
             };
@@ -52,27 +55,27 @@ namespace Generator.Lambda
             return result.Select(FromDynamoDb).ToList();
         }
 
-        public async Task<Entity> GetItemAsync(string tableName, string userId, string entityId)
+        public async Task<Entity> GetItemAsync(string userId, string entityId)
         {
-            var getitemRq = new GetItemRequest 
-            { 
-                TableName = tableName,
-                Key = new Dictionary<string, AttributeValue> 
-                { 
+            var getitemRq = new GetItemRequest
+            {
+                TableName = _tableName,
+                Key = new Dictionary<string, AttributeValue>
+                {
                     { "user_id", new AttributeValue(userId) },
                     { "entity_id", new AttributeValue(entityId) },
                 }
             };
             var getitemTask = await _dynamoDbClient.GetItemAsync(getitemRq);
             var result = getitemTask.Item;
-            
+
             if (result.Count > 0)
                 return FromDynamoDb(result);
-            
+
             return null;
         }
 
-        public async Task<Entity> PutItemAsync(string tableName, Entity item)
+        public async Task<Entity> PutItemAsync(Entity item)
         {
             var dbItem = new Dictionary<string, AttributeValue>();
             if (string.IsNullOrEmpty(item.Id))
@@ -83,17 +86,17 @@ namespace Generator.Lambda
 
             dbItem.Add("entity_name", new AttributeValue(item.Name));
 
-            await _dynamoDbClient.PutItemAsync(tableName, dbItem);
+            await _dynamoDbClient.PutItemAsync(_tableName, dbItem);
             return item;
         }
 
-        public async Task<int> DeleteItemAsync(string tableName, Entity item)
+        public async Task<int> DeleteItemAsync(Entity item)
         {
             var dbItem = new Dictionary<string, AttributeValue>();
             dbItem.Add("user_id", new AttributeValue(item.UserId));
             dbItem.Add("entity_id", new AttributeValue(item.Id));
 
-            var result = await _dynamoDbClient.DeleteItemAsync(tableName, dbItem, ReturnValue.ALL_OLD);
+            var result = await _dynamoDbClient.DeleteItemAsync(_tableName, dbItem, ReturnValue.ALL_OLD);
             return result.Attributes.Count;
         }
 

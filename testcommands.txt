@@ -32,14 +32,18 @@ dotnet lambda deploy-serverless \
 --configuration Release \
 --framework netcoreapp2.0 \
 --stack-name dynamodb-serverless \
---template ../../template.yaml \
+--template template.yaml \
 --region eu-west-1
 
 
 
+curl -X GET https://uccg86q7ng.execute-api.eu-west-1.amazonaws.com/Prod/users/0/entities
+
+curl -X POST -H "Content-Type: application/json" -d '{"Name":"Student"}' https://uccg86q7ng.execute-api.eu-west-1.amazonaws.com/Prod/users/0/entities
 
 
-curl -X POST -H "Content-Type: application/json" -d '{"Name":"Student"}' https://fqdbv9i7d0.execute-api.eu-west-1.amazonaws.com/Prod/users/0/entities
+
+
 
 
 Enter CloudFormation Stack Name: (CloudFormation stack name for an AWS Serverless application)
@@ -56,10 +60,69 @@ Enter Framework: (Target framework to compile, for example netcoreapp1.0.)
 >>>netcoreapp2.0
 
 
+        {
+            "label": "dotnet test",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test"
+            ],
+            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}/test/HelloWorld.Test"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
 
-
-
-
+{
+            "label": "SAM Package",
+            "command": "sam",
+            "type": "process",
+            "args": [
+                "package",
+                "--template-file",
+                "template.yaml",
+                "--output-template-file",
+                "packaged.yaml",
+                "--s3-bucket",
+                "abelperez-temp"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn":"dotnet publish",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+{
+            "label": "SAM Deploy",
+            "command": "sam",
+            "type": "process",
+            "args": [
+                "deploy",
+                "--template-file",
+                "packaged.yaml",
+                "--stack-name",
+                "dynamodb-crud",
+                "--capabilities",
+                "CAPABILITY_IAM"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn":"SAM Package",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
 
 
 

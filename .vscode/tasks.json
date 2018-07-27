@@ -39,45 +39,8 @@
                 "isDefault": true
             }
         },
-        {
-            "label": "dotnet test",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "test"
-            ],
-            "problemMatcher": "$msCompile",
-            "options": {
-                "cwd": "${workspaceFolder}/test/HelloWorld.Test"
-            },
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "SAM Package",
-            "command": "sam",
-            "type": "process",
-            "args": [
-                "package",
-                "--template-file",
-                "template.yaml",
-                "--output-template-file",
-                "packaged.yaml",
-                "--s3-bucket",
-                "abelperez-temp"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "dependsOn":"dotnet publish",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": []
-        },
+
+        
         {
             "label": "SAM Local start API",
             "command": "sudo",
@@ -129,22 +92,31 @@
             "problemMatcher": []
         },
         {
-            "label": "SAM Deploy",
-            "command": "sam",
+            "label": "dotnet lambda deploy-serverless",
+            "command": "dotnet",
             "type": "process",
             "args": [
-                "deploy",
-                "--template-file",
-                "packaged.yaml",
+                "lambda",
+                "deploy-serverless",
+                "--s3-bucket",
+                "abelperez-temp",
+                "--s3-prefix",
+                "dynamodb-serverless/",
+                "--configuration",
+                "Release",
+                "--framework",
+                "netcoreapp2.0",
                 "--stack-name",
-                "dynamodb-crud",
-                "--capabilities",
-                "CAPABILITY_IAM"
+                "dynamodb-serverless",
+                "--template",
+                "template.yaml",
+                "--region",
+                "eu-west-1"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/src/Generator.Lambda"
             },
-            "dependsOn":"SAM Package",
+            "dependsOn":"dotnet publish",
             "group": {
                 "kind": "build",
                 "isDefault": true
